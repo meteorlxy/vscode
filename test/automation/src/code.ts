@@ -236,7 +236,7 @@ async function poll<T>(
 			} else {
 				lastError = 'Did not pass accept function';
 			}
-		} catch (e) {
+		} catch (e: any) {
 			lastError = Array.isArray(e.stack) ? e.stack.join(os.EOL) : e.stack;
 		}
 
