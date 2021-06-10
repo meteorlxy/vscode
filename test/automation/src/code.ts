@@ -128,7 +128,7 @@ export async function spawn(options: SpawnOptions): Promise<Code> {
 		return connect(connectDriver, child, '', handle, options.logger);
 	}
 
-	const env = process.env;
+	const env = { ...process.env };
 	const codePath = options.codePath;
 	const outPath = codePath ? getBuildOutPath(codePath) : getDevOutPath();
 
@@ -193,7 +193,7 @@ export async function spawn(options: SpawnOptions): Promise<Code> {
 	}
 
 	const electronPath = codePath ? getBuildElectronPath(codePath) : getDevElectronPath();
-	const spawnOptions: cp.SpawnOptions = { env };
+	const spawnOptions: cp.SpawnOptions = { env, stdio: 'inherit' };
 	child = cp.spawn(electronPath, args, spawnOptions);
 	instances.add(child);
 	child.once('exit', () => instances.delete(child!));
