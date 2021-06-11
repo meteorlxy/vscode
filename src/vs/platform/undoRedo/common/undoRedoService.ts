@@ -76,12 +76,12 @@ class ResourceReasonPair {
 }
 
 class RemovedResources {
-	private readonly elements = new Map<string, ResourceReasonPair>();
+	private readonly _elements = new Map<string, ResourceReasonPair>();
 
 	public createMessage(): string {
 		const externalRemoval: string[] = [];
 		const noParallelUniverses: string[] = [];
-		for (const [, element] of this.elements) {
+		for (const [, element] of this._elements) {
 			const dest = (
 				element.reason === RemovedResourceReason.ExternalRemoval
 					? externalRemoval
@@ -110,19 +110,19 @@ class RemovedResources {
 	}
 
 	public get size(): number {
-		return this.elements.size;
+		return this._elements.size;
 	}
 
 	public has(strResource: string): boolean {
-		return this.elements.has(strResource);
+		return this._elements.has(strResource);
 	}
 
 	public set(strResource: string, value: ResourceReasonPair): void {
-		this.elements.set(strResource, value);
+		this._elements.set(strResource, value);
 	}
 
 	public delete(strResource: string): boolean {
-		return this.elements.delete(strResource);
+		return this._elements.delete(strResource);
 	}
 }
 
@@ -196,7 +196,7 @@ type StackElement = ResourceStackElement | WorkspaceStackElement;
 
 class ResourceEditStack {
 	public readonly resourceLabel: string;
-	private readonly strResource: string;
+	private readonly _strResource: string;
 	private _past: StackElement[];
 	private _future: StackElement[];
 	public locked: boolean;
@@ -204,7 +204,7 @@ class ResourceEditStack {
 
 	constructor(resourceLabel: string, strResource: string) {
 		this.resourceLabel = resourceLabel;
-		this.strResource = strResource;
+		this._strResource = strResource;
 		this._past = [];
 		this._future = [];
 		this.locked = false;
@@ -214,12 +214,12 @@ class ResourceEditStack {
 	public dispose(): void {
 		for (const element of this._past) {
 			if (element.type === UndoRedoElementType.Workspace) {
-				element.removeResource(this.resourceLabel, this.strResource, RemovedResourceReason.ExternalRemoval);
+				element.removeResource(this.resourceLabel, this._strResource, RemovedResourceReason.ExternalRemoval);
 			}
 		}
 		for (const element of this._future) {
 			if (element.type === UndoRedoElementType.Workspace) {
-				element.removeResource(this.resourceLabel, this.strResource, RemovedResourceReason.ExternalRemoval);
+				element.removeResource(this.resourceLabel, this._strResource, RemovedResourceReason.ExternalRemoval);
 			}
 		}
 		this.versionId++;
@@ -227,7 +227,7 @@ class ResourceEditStack {
 
 	public toString(): string {
 		let result: string[] = [];
-		result.push(`* ${this.strResource}:`);
+		result.push(`* ${this._strResource}:`);
 		for (let i = 0; i < this._past.length; i++) {
 			result.push(`   * [UNDO] ${this._past[i]}`);
 		}
@@ -246,14 +246,14 @@ class ResourceEditStack {
 	public setElementsIsValid(isValid: boolean): void {
 		for (const element of this._past) {
 			if (element.type === UndoRedoElementType.Workspace) {
-				element.setValid(this.resourceLabel, this.strResource, isValid);
+				element.setValid(this.resourceLabel, this._strResource, isValid);
 			} else {
 				element.setValid(isValid);
 			}
 		}
 		for (const element of this._future) {
 			if (element.type === UndoRedoElementType.Workspace) {
-				element.setValid(this.resourceLabel, this.strResource, isValid);
+				element.setValid(this.resourceLabel, this._strResource, isValid);
 			} else {
 				element.setValid(isValid);
 			}
@@ -262,7 +262,7 @@ class ResourceEditStack {
 
 	private _setElementValidFlag(element: StackElement, isValid: boolean): void {
 		if (element.type === UndoRedoElementType.Workspace) {
-			element.setValid(this.resourceLabel, this.strResource, isValid);
+			element.setValid(this.resourceLabel, this._strResource, isValid);
 		} else {
 			element.setValid(isValid);
 		}
@@ -285,7 +285,7 @@ class ResourceEditStack {
 		// remove the future
 		for (const futureElement of this._future) {
 			if (futureElement.type === UndoRedoElementType.Workspace) {
-				futureElement.removeResource(this.resourceLabel, this.strResource, RemovedResourceReason.NoParallelUniverses);
+				futureElement.removeResource(this.resourceLabel, this._strResource, RemovedResourceReason.NoParallelUniverses);
 			}
 		}
 		this._future = [];
@@ -318,7 +318,7 @@ class ResourceEditStack {
 				removePastAfter = 0;
 			}
 			if (!isOK && element.type === UndoRedoElementType.Workspace) {
-				element.removeResource(this.resourceLabel, this.strResource, RemovedResourceReason.ExternalRemoval);
+				element.removeResource(this.resourceLabel, this._strResource, RemovedResourceReason.ExternalRemoval);
 			}
 		}
 		let removeFutureBefore = -1;
@@ -329,7 +329,7 @@ class ResourceEditStack {
 				removeFutureBefore = i;
 			}
 			if (!isOK && element.type === UndoRedoElementType.Workspace) {
-				element.removeResource(this.resourceLabel, this.strResource, RemovedResourceReason.ExternalRemoval);
+				element.removeResource(this.resourceLabel, this._strResource, RemovedResourceReason.ExternalRemoval);
 			}
 		}
 		if (removePastAfter !== -1) {
@@ -387,9 +387,9 @@ class ResourceEditStack {
 	public splitPastWorkspaceElement(toRemove: WorkspaceStackElement, individualMap: Map<string, ResourceStackElement>): void {
 		for (let j = this._past.length - 1; j >= 0; j--) {
 			if (this._past[j] === toRemove) {
-				if (individualMap.has(this.strResource)) {
+				if (individualMap.has(this._strResource)) {
 					// gets replaced
-					this._past[j] = individualMap.get(this.strResource)!;
+					this._past[j] = individualMap.get(this._strResource)!;
 				} else {
 					// gets deleted
 					this._past.splice(j, 1);
@@ -403,9 +403,9 @@ class ResourceEditStack {
 	public splitFutureWorkspaceElement(toRemove: WorkspaceStackElement, individualMap: Map<string, ResourceStackElement>): void {
 		for (let j = this._future.length - 1; j >= 0; j--) {
 			if (this._future[j] === toRemove) {
-				if (individualMap.has(this.strResource)) {
+				if (individualMap.has(this._strResource)) {
 					// gets replaced
-					this._future[j] = individualMap.get(this.strResource)!;
+					this._future[j] = individualMap.get(this._strResource)!;
 				} else {
 					// gets deleted
 					this._future.splice(j, 1);
